@@ -245,22 +245,55 @@ Hospital readmissions within **30 days** of discharge are costly, and in many he
 
 📁 [`powerbi/ReadmitGuard_Dashboard.pbix`](02-ReadmitGuard-Healthcare-Analytics/powerbi/ReadmitGuard_Dashboard.pbix)
 
-![Power BI: ReadmitGuard dashboard layout](02-ReadmitGuard-Healthcare-Analytics/images/powerbi/dashboard_layout.png)
+A one-page report that lets care teams filter the 101,766 encounters by patient and admission attributes. Every visual updates as the filters change.
 
-*Report page layout generated from the `.pbix` file, with KPI values calculated from the dataset. Open the `.pbix` in Power BI Desktop to use it interactively.*
+![Power BI: ReadmitGuard dashboard](02-ReadmitGuard-Healthcare-Analytics/images/powerbi/dashboard.png)
+
+*This image is a static rendering of the report, made with Python. It uses the visual definitions in the `.pbix` (fields, aggregations, sort order, data labels, theme colours and canvas positions) applied to the full dataset. Open the `.pbix` in Power BI Desktop to use the slicers.*
+
+#### Report design
 
 | Component | Details |
 |-----------|---------|
+| **Data model** | `diabetic_data` fact table (101,766 rows) plus a dedicated `_Measures` table that keeps the DAX measures separate from the data |
 | **KPI cards (DAX measures)** | `Total Encounters` = **101,766** · `Readmitted Within 30 Days` = **11,357** · `30-Day Readmission Rate` = **11.16%** |
-| **Visuals** | Encounters by age group × readmission status · Diagnoses and emergency visits by readmission status · Encounter metrics by readmission status · Scatter of medications vs lab procedures (size = diagnoses, colour = readmission) |
-| **Slicers** | Age · Gender · Race · Payer code · Admission type · Readmission status |
-| **Model** | `diabetic_data` fact table plus a dedicated `_Measures` table |
+| **Slicers** | Age · Gender · Race · Payer code · Admission type · Readmission status (they filter every visual on the page) |
+| **Canvas** | 1280 × 720 · title and subtitle banner · data-source footer · bordered visuals with rounded, shadowed KPI cards |
+
+#### Visuals
+
+| # | Visual | Type | Fields (aggregation) | What it shows |
+|---|--------|------|----------------------|---------------|
+| 1 | Diagnoses and Emergency Visits by Readmission Status | Clustered column | Axis `readmitted` · Values `number_emergency` (Sum), `number_diagnoses` (Sum) · data labels on | Encounters readmitted within 30 days average **0.36 emergency visits each**, compared with 0.11 for patients never readmitted (**3.3× higher**) |
+| 2 | Patient Encounters by Age Group and Readmission Status | Clustered column | Axis `age` · Legend `readmitted` · Values `encounter_id` (Count) · data labels on | Encounters peak at ages **70–80**, which also has the most 30-day readmissions (3,069) |
+| 3 | Average Patient Encounter Metrics by Readmission Status | Clustered column | Axis `readmitted` · Values `num_medications`, `num_procedures`, `time_in_hospital` (Average) | Patients readmitted within 30 days have the longest stays (**4.77 days** compared with 4.25) and the most medications (**16.9** compared with 15.7) |
+| 4 | Relationship Between Medications, Lab Procedures and Diagnoses | Scatter | X `num_medications` · Y `num_lab_procedures` · Size `number_diagnoses` (Sum) · Legend `readmitted` · Tooltip first `encounter_id` | Most encounters cluster at 10–25 medications and 30–70 lab procedures; readmitted patients appear across the whole range rather than in one corner |
+
+<details>
+<summary><b>View each visual at full size</b></summary>
+
+![Power BI visual 1: diagnoses and emergency visits by readmission status](02-ReadmitGuard-Healthcare-Analytics/images/powerbi/01_diagnoses_emergency_by_readmission.png)
+![Power BI visual 2: encounters by age group and readmission status](02-ReadmitGuard-Healthcare-Analytics/images/powerbi/02_encounters_by_age_readmission.png)
+![Power BI visual 3: average encounter metrics by readmission status](02-ReadmitGuard-Healthcare-Analytics/images/powerbi/03_avg_encounter_metrics_by_readmission.png)
+![Power BI visual 4: medications vs lab procedures scatter](02-ReadmitGuard-Healthcare-Analytics/images/powerbi/04_medications_vs_lab_procedures_scatter.png)
+
+</details>
 
 ---
 
-### Excel: PivotTable Analysis
+### Excel: Descriptive Statistics & PivotTable Analysis
 
 📁 [`excel/diabetic_data.xlsx`](02-ReadmitGuard-Healthcare-Analytics/excel/diabetic_data.xlsx)
+
+| Sheet | Technique | Result |
+|-------|-----------|--------|
+| Statistical summary | Analysis ToolPak → Descriptive Statistics on 8 numeric clinical variables | Average stay **4.4 days**, **16** medications and **43** lab procedures per encounter; emergency visits are extremely skewed (skewness 22.9) |
+| Gender Age Readmission | PivotTable filtered to `readmitted = <30`, rows = age, columns = gender + clustered column chart | **11,357** 30-day readmissions, peaking at ages 70–80 |
+| Readmission Categories | PivotTable + column chart | `NO` 54,864 · `>30` 35,545 · `<30` 11,357 |
+| Race Distribution | PivotTable + bar chart | Caucasian 76,099 · African American 19,210 · 2,273 records with unknown race (`?`) |
+
+**Descriptive statistics (Analysis ToolPak)**
+![Excel: descriptive statistics of clinical variables](02-ReadmitGuard-Healthcare-Analytics/images/excel/statistical_summary.png)
 
 **30-day readmissions by age group and gender (filtered PivotTable and clustered column chart)**
 ![Excel: 30-day readmissions by age and gender](02-ReadmitGuard-Healthcare-Analytics/images/excel/readmissions_30day_by_age_gender.png)
@@ -374,6 +407,7 @@ ORDER BY Percentage DESC;
 | **11.16%** of encounters end in readmission within 30 days, and **46.09%** are readmitted at some point. | Track the 30-day rate as the headline KPI, as the dashboard does. |
 | Encounters for patients aged **60–90** make up the most 30-day readmissions (7,649 of 11,357). From age 70 upwards, women outnumber men, most clearly at 80+. | Prioritise discharge planning and follow-up calls for older patients. |
 | **Heart failure (428)** is the single most common diagnosis, ahead of diabetes itself (250). | Coordinate care for diabetic patients who also have cardiac conditions. |
+| Patients readmitted within 30 days had **3.3× more prior emergency visits** per encounter than those never readmitted (0.36 vs 0.11), and stayed longer (4.77 vs 4.25 days). | Flag patients with recent emergency visits for follow-up after discharge. |
 | Length of stay correlates moderately with medications (r = 0.47) and lab procedures (r = 0.32). | Use encounter intensity as an input to a future risk-scoring model. |
 | Prior inpatient and emergency visits contain many outliers. | Keep these records, because they are likely the highest-risk patients. Do not remove them as noise. |
 | `weight`, `max_glu_serum` and `A1Cresult` are mostly empty. | Improve capture of these clinical measurements, which are known risk factors. |
