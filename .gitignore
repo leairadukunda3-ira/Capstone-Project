@@ -1,0 +1,15 @@
+# Local archive of superseded drafts, zips and unused raw data (not part of the portfolio)
+_archive/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Office lock files
+~$*
+
+# Archives
+*.zip
